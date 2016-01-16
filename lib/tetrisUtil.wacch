@@ -1,0 +1,267 @@
+header
+
+    #initialise grid
+    int[][] initialiseGrid(int width, int height) is
+        int[][] grid = call initIntArray2D(0, width, height);
+        return grid
+    end
+
+    int rotate2(int[][] block) is
+        int layer = 0;
+        int n = len block;
+        while (layer < (n / 2)) do
+            int first = layer;
+            int last = n - 1 - layer;
+            int i = first;
+            while (i < last) do
+                int offset = i - first;
+                int top = block[first][i];
+                block[first][i] = block[last - offset][first];
+                block[last - offset][first] = block[last][last - offset];
+                block[last][last - offset] = block[i][last];
+                block[i][last] = top;
+                i += 1
+            done;
+            layer += 1
+        done;
+        return 0
+    end
+
+    int rotate(int[][] block) is
+        int n = len block;
+        int f = 0;
+        int c = 0;
+        if (n == 2) then return 0 else skip fi;
+        if (n == 3) then f = 1; c = 2 else skip fi;
+        if (n == 4) then f = 2; c = 2 else skip fi;
+        int x = 0;
+        while x < f do
+            int y = 0;
+            while y < c do
+                int temp = block[x][y];
+                block[x][y] = block[y][n - 1 - x];
+                block[y][n - 1 - x] = block[n - 1 - x][n - 1 - y];
+                block[n - 1 - x][n - 1 - y] = block[n - 1 - y][x];
+                block[n - 1 - y][x] = temp;
+                y += 1
+            done;
+            x += 1
+        done;
+        return 0
+
+    end
+
+    #initialise colours
+    int[][] initialiseColours() is
+
+        int empty = 0x000000;
+    
+
+        int brown = 0xF4A460;
+        int red = 0xFF0000;
+        int orange = 0xFFA500;
+        int yellow = 0xFFFF00;
+        int lime = 0x32CD32;
+        int green = 0x00FF00;
+        int blue = 0x0000FF;
+        int purple = 0x551A8B;
+        int pink = 0xFF69B4;
+        int[] classic = [green, blue, red, purple, pink, orange, yellow];
+
+        # Neon Colour Scheme
+        int neonPink = 0xFF0099;
+        int neonYellow = 0xF3F315;
+        int neonGreen = 0x83F52C;
+        int neonOrange = 0xFF6600;
+        int neonPurple = 0x6E0DD0;
+        int neonWhite = 0xFFFFFF;
+        int[] neon = [neonPink, neonYellow, neonGreen, neonOrange, neonPurple, neonWhite];
+
+        int[][] colours =  [neon, classic];
+        
+        return colours
+    end
+
+    int showGrid(int[][] grid) is
+        int j = 0;
+        while (j < len grid[0]) do
+            int i = 0;
+            while (i < len grid) do
+                print grid[i][j];
+                print "\t";
+                i += 1
+            done;
+            println "";
+            j += 1
+        done;
+        return 0
+    end
+
+    int drawGridSquare(int[] fb, int x, int y, int colour) is
+        #length of each grid square
+        #int square_size = 40;
+
+        #margins from top and bottom
+        int x_offset = 312;
+        int y_offset = 24;
+
+        #struct for the squares to be drawn
+        struct Rekt rekt = new Rekt;
+        rekt.x = (x * 40) + x_offset;
+        rekt.y = (y * 40) + y_offset;
+        rekt.width = 40;
+        rekt.height = 40;
+        rekt.colour = colour;
+
+        call drawRect(fb, rekt);
+        return 0
+    end
+
+    int drawGrid(int[] fb, int[][] grid) is
+        int height = len grid;
+        int width = len grid[0];
+        int i = 0;
+        while (i < height) do
+            int j = 0;
+            while (j < width) do
+                call drawGridSquare(fb, j, i, grid[i][j]);
+                j += 1
+            done;
+            i += 1
+        done;
+
+        return 0
+    end
+
+    int drawBlock(int[] fb, int[][] block, int x, int y, int colour) is
+        #width and height
+        int height = len block;
+        int width = len block[0];
+
+        int i = 0;
+        while (i < height) do
+            int j = 0;
+            while (j < width) do
+                #draw rectangle
+                if (block[i][j] != 0) then
+                    call drawGridSquare(fb, x+j, y+i, colour)
+                else
+                    skip
+                fi;
+                #increment loop variant
+                j += 1
+            done;
+            i += 1
+        done;
+
+        return 0
+    end
+
+    int copyBlockToGrid(int[][] block, int[][] grid, int x, int y, int colour) is
+        # PRE: The block is in a valid position to be written to the grid, and will not overwrrite  anything
+        int i = 0;
+        while i <  len block do
+            int j = 0; 
+            while j < len block[0] do
+                if (block[i][j] != 0) then 
+                    grid[y + i][x + j] = colour
+                else
+                    skip
+                fi;
+                j += 1
+            done;
+            i += 1
+        done;
+        return 0
+    end
+
+    int isColliding(int[][] block, int[][] grid, int x, int y) is
+        int i = 0;
+        while i <  len block do
+            int j = 0; 
+            while j < len block[0] do
+                if (block[i][j] != 0)
+                    && ((y + i < 0) || (y + i >= len grid) 
+                    || (x + j < 0) || (x + j >= len grid[0])
+                    || grid[y + i][x + j] != 0)
+                then
+                    return 1
+                else
+                    skip
+                fi;
+                j += 1
+            done;
+            i += 1
+        done;
+        return 0
+    end 
+
+    int shiftDown(int[][] grid, int[] rowsToRemove) is
+        int shiftAmount = 0;
+        int y = (len grid) - 1;
+
+        while (y >= 0) do
+            # first check we are on a square bounds
+            if (rowsToRemove[y + 1] == 1) then 
+                #This is a row to remove
+                #Empty the row
+                call fillIntArray(0, grid[y]);
+                shiftAmount += 1
+            else 
+                if ((y + shiftAmount) < (len grid)) then # If we are not on the bottom row, then shift down
+                    call shiftRowDown(grid, y, shiftAmount)
+                else skip fi
+             fi;                
+            
+            y -= 1
+        done;
+         
+        return 0
+    end
+
+    int shiftRowDown(int[][] grid, int y, int amount) is
+        if (amount == 0) then return 0 else skip fi;
+        if (y + amount) < (len grid) then # Check valid index
+            call copyRow(grid, y, y + amount);
+            call fillIntArray(0, grid[y])
+        else skip fi;
+        return 0
+    end
+
+    int copyRow(int[][] grid, int rowSrc, int rowDst) is
+        int x = 0;
+        while (x < len grid[rowDst]) do
+            grid[rowDst][x] = grid[rowSrc][x];
+            x += 1
+        done;
+
+        return 0
+    end
+
+    int[] detectRows(int[][] grid) is
+        int[] res = call initIntArray(0, 19);
+        int i = 0;
+        while (i < len grid) do
+            int j = 0;
+            int breakInner = 0;
+            while ((j < len grid[0]) && (breakInner != 1)) do
+                if (grid[i][j] != 0) then
+                    if (j == ((len grid[0]) - 1)) then
+                        res[i + 1] = 1;
+                        breakInner = 1;
+                        res[0] = 1
+                    else
+                        skip
+                    fi
+                else
+                    breakInner = 1
+                fi;
+                j += 1
+            done;
+            i += 1
+        done;
+
+        return res
+    end
+
+end
